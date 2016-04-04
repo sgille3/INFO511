@@ -2,7 +2,7 @@
 title: "INFO 511 Homework 3"
 author: "Scott Gillespie"
 date: "April 3, 2016"
-output: word_document
+output: html_document
 ---
 
 \
@@ -10,7 +10,7 @@ Establish working directory, call required libraries, and read in raw data via c
 function from the "data.table" package.
 \
 
-```{r, results="hide", warning=FALSE, message=FALSE}
+```{r, echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 setwd("C:/Users/sgille3/Projects/Course Work/INFO 511 - Analytics/Homework 3/")
 library(dplyr)
 library(data.table)
@@ -31,7 +31,7 @@ package. Two separate dplyr dataframes are created for the purposes of specifyin
 creation while merging two indepent ggplots. 
 \
 
-```{r, results="hide", warning=FALSE, message=FALSE}
+```{r, echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 full1 <- inner_join(pear,pearDemo,"pear_id") %>%
         group_by(hour,aa) %>%
         summarise(meanSBP = mean(sbp), meanDBP = mean(dbp),
@@ -59,7 +59,7 @@ head(full2)
 ggplot creation by outcome (SBP and DBP) followed by some fancy code (tip of the hat to Hadley W.) that merges plots for the final figure.
 \
 
-```{r, warning=FALSE, message=FALSE, fig.width=12, fig.height=12}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=12}
 ###appears to be 2 StdErrs in the plot
 pd=position_dodge(0.2)
 plot1 <-  ggplot(full1, aes(x=hour, y=meanSBP, group=race, colour=race)) +
