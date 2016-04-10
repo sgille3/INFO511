@@ -1,0 +1,106 @@
+---
+title: "Gillespie - Project1"
+author: "Scott Gillespie"
+date: "April 11, 2016"
+output: html_document
+---
+
+Read tornado data in and call needed R libraries. 
+
+```{r}
+setwd("C:/Users/sgille3/Projects/Course Work/INFO 511 - Analytics/Project 1/tornado/")
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(openintro)
+library(choroplethr)
+library(choroplethrMaps)
+
+tornado<-fread("tornadoSGEdits.csv")
+```
+
+Utilize 'dplyr' package to clean data.
+
+```{r}
+dataForPlot <- tornado %>%
+                mutate(totalLoss = (money_loss + crop_loss), 
+                       totalMortality = (injuries + fatalities),
+                       region = tolower(abbr2state(state))) %>%
+                select(serialid, state, region, totalMortality, totalLoss, latitude, 
+                       longitude, elat, elong, length_miles, width_yards)
+
+head(dataForPlot)
+```
+
+Investigate the association between geographical location and mortality.
+
+```{r}
+dataMortality <- dataForPlot %>%
+                      select(region, totalMortality) %>%
+                      group_by(region) %>%
+                      summarise(value = sum(totalMortality)) %>%
+                      filter(region != '<NA>') %>%
+                      arrange(-value)
+str(dataForPlot)
+head(dataMortality,100)
+
+dataMortality<-as.data.frame(dataMortality)
+mortalityPlot<-state_choropleth(dataMortality, title="1950 - 2012 Tornado Morality by State")
+```
+
+Investigate the relationship between geographical location and property loss.
+
+```{r}
+dataLoss <- dataForPlot %>%
+                      select(region, totalLoss) %>%
+                      group_by(region) %>%
+                      summarise(value = sum(totalLoss)) %>%
+                      filter(region != '<NA>') %>%
+                      arrange(-value)
+
+dataLoss<-as.data.frame(dataLoss)
+lossPlot<-state_choropleth(dataLoss, title="1950 - 2012 Tornado Property Loss by State")
+```
+
+Combine plots together to investigate differences in rates of mortality and property loss
+
+```{r}
+multiplot(mortalityPlot,lossPlot,cols=2)
+```
+
+Combine data for interactive Plotly figure
+
+```{r}
+dataForPlotly <- tornado %>%
+                    mutate(totalLoss = (money_loss + crop_loss), 
+                    totalMortality = (injuries + fatalities),
+                    region = abbr2state(state)) %>%
+                  select(serialid, state, region, totalMortality, totalLoss, latitude, 
+                    longitude, elat, elong, length_miles, width_yards) %>%
+                  group_by(state) %>%
+                  summarise(mortalitySum = sum(totalMortality), lossSum = sum(totalLoss)) %>%
+                  filter(state != '<NA>')
+```
+
+Cleaning and plotting final figure for assessment.
+
+```{r}
+dataForPlotly$hover <- with(dataForPlotly, paste(state, "<br>", "Economic Loss:", lossSum))
+
+# give state boundaries a white border
+l <- list(color = toRGB("black"), width = 2)
+# specify some map projection/options
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('light blue')
+)
+
+plot_ly(dataForPlotly, z = mortalitySum, text = hover, locations = state, type = 'choropleth',
+        locationmode = 'USA-states', color = mortalitySum, colors = 'Reds',
+        marker = list(line = l), colorbar = list(title = "Deaths (thousands)")) %>%
+  layout(title = '1950 - 2012 Tornado Morality by State<br>(Hover for Economic Loss in Millions USD)' , geo = g)
+```
+
+
